@@ -1,6 +1,8 @@
 #include "session.h"
 #include "game.h"
+#include <stdio.h>
 #include <stdlib.h>
+#include "antixss.h"
 
 struct GlobalData global_data;
 
@@ -100,6 +102,10 @@ int callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void
                     break;
                 } 
                 printf("send message \"%.*s\"\n", (int)len-1, &((char*)in)[1]);
+
+                bool isGood = isSafe(&((char*)in)[1]);
+                if(!isGood) break;
+                
 
                 char message[256] = "m";
                 strcpy(&message[1], ((SessionData*)user)->username);
