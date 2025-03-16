@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pl" >
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="main.js"> </script>
+    <title>Uno</title>
+
+<style> 
+body {
+    background-color: rgb(165, 81, 42);
+    margin: 3px;
+    height: calc(100% - 6px);
+}
+html {
+    height: 100%;
+}
+
+#messages {
+    width: 400px;
+    height: calc(100% - 239px);
+    background-color: rgb(196, 196, 196);
+    margin-top: 5px;
+    border: solid 1px black;
+    overflow-y: scroll;
+    word-wrap: break-word;
+}
+#draw,
+#ready {
+    width: 200px;
+    height: 200px;
+    border: solid 1px black;
+    font-size: 30px;
+    background-color: rgb(250, 125, 93);
+}
+#draw {
+    background-color: rgb(95, 109, 124);
+}
+
+#_input {
+    font-size: 20px;
+}
+#send {
+    font-size: 20px;
+}
+.content {
+    display: flex;
+    height: 95%;
+}
+.game-space {
+    width: 100%;
+    margin-left: 10px;
+    background-color: rgb(245, 104, 48);
+    max-height: 900px;
+}
+.table {
+    background-image: url("resource/stol.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 60%;
+    height: 40%;
+    margin-inline: auto;
+}
+#other-players {
+    height: 30%;
+    display: flex;
+    justify-content: center;
+}
+#cards-row {
+    margin-top: -5%;
+    height: 30%;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.card {
+    border-radius: 20px;
+    width: 165px;
+    height: 250px;
+    background-size: contain;
+}
+.user-inputs,
+.card-count {
+    margin-top: 5px;
+    display: flex;
+    justify-content: center;
+}
+.card-count > p1 {
+    font-size: 33px;
+    color: rgb(55, 61, 65);
+}
+.card-icon {
+    width: 33px;
+    height: 50px;
+    background-image: url("resource/card_back.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    border-radius: 5px;
+    margin-right: 10px;
+}
+.player {
+    display: flex;
+    flex-direction: column;
+    width: 150px;
+    height: 100%;
+    text-align: center;
+    padding-inline: 20px;
+    background-color: rgb(201, 86, 41);
+    border-radius: 20px;
+    margin: 2px;
+}
+.player-img {
+    height: 150px;
+    background-size: cover;
+}
+.player > p1 {
+    font-size: 20px;
+    color: rgb(55, 61, 65);
+}
+#table-card {
+    position: relative;
+    width: 66px;
+    height: 100px;
+    left: calc(50% - 40px);
+    top: 20%;
+    border-radius: 5px;
+    background-image: url("resource/card_back.png");
+    background-size: cover;
+}
+#table-text-space {
+    position: relative;
+    text-align: center;
+    top: 20%;
+    font-size: 50px;
+    color: rgb(55, 61, 65);
+}
+.left-row {
+    height: 100%;
+}
+
+</style>
+
+</head>
+<body onload="OnBodyLoad()">
+    <div class="content">
+        <div class="left-row">
+            <input id="_input" type="text"> 
+            <input id="send" type="button" onclick="SendToWs()" value="send">
+            <div id="messages"> </div>
+            <div class="user-inputs">
+                <input id="ready" type="button" onclick="Ready()" value="ready">
+                <input id="draw" type="button" onclick="Draw()" value="draw">
+            </div>
+        </div>
+        <div class="game-space">
+            <div id="other-players"> </div>
+            <div class="table">
+                <div id="table-card"> </div>
+                <div id="table-text-space"></div>
+            </div>
+            <div id="cards-row"> </div>
+        </div>
+    </div>
+</body>
+</html>
