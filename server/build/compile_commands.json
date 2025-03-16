@@ -1,0 +1,26 @@
+[
+{
+  "directory": "/home/amalpa/Desktop/uno online/server/build",
+  "command": "/usr/bin/gcc   -g -o CMakeFiles/uno.dir/session.c.o -c \"/home/amalpa/Desktop/uno online/server/session.c\"",
+  "file": "/home/amalpa/Desktop/uno online/server/session.c",
+  "output": "CMakeFiles/uno.dir/session.c.o"
+},
+{
+  "directory": "/home/amalpa/Desktop/uno online/server/build",
+  "command": "/usr/bin/gcc   -g -o CMakeFiles/uno.dir/main.c.o -c \"/home/amalpa/Desktop/uno online/server/main.c\"",
+  "file": "/home/amalpa/Desktop/uno online/server/main.c",
+  "output": "CMakeFiles/uno.dir/main.c.o"
+},
+{
+  "directory": "/home/amalpa/Desktop/uno online/server/build",
+  "command": "/usr/bin/gcc   -g -o CMakeFiles/uno.dir/useful.c.o -c \"/home/amalpa/Desktop/uno online/server/useful.c\"",
+  "file": "/home/amalpa/Desktop/uno online/server/useful.c",
+  "output": "CMakeFiles/uno.dir/useful.c.o"
+},
+{
+  "directory": "/home/amalpa/Desktop/uno online/server/build",
+  "command": "/usr/bin/gcc   -g -o CMakeFiles/uno.dir/game.c.o -c \"/home/amalpa/Desktop/uno online/server/game.c\"",
+  "file": "/home/amalpa/Desktop/uno online/server/game.c",
+  "output": "CMakeFiles/uno.dir/game.c.o"
+}
+]

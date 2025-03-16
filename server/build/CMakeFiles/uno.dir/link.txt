@@ -1,0 +1,1 @@
+/usr/bin/gcc -g CMakeFiles/uno.dir/session.c.o CMakeFiles/uno.dir/main.c.o CMakeFiles/uno.dir/useful.c.o CMakeFiles/uno.dir/game.c.o -o uno  -lwebsockets -lm 
