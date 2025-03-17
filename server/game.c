@@ -81,17 +81,77 @@ void GenerateStartingCards(char *cards, char* card_count)
 
 void DrawCard(char *cards, char* card_count)
 {
-    cards[*card_count] = (rand()%80)+1;
-    if(cards[*card_count] > 40) cards[*card_count] -= 40; 
+    cards[*card_count] = (rand()%88)+1;
+    if(cards[*card_count] > 44) cards[*card_count] -= 44; 
     (*card_count)++;
+}
+
+void ConsoleCommand(void *in, struct lws *wsi, SessionData *user, size_t len) {
+    if(len == 16) {
+    if(strncmp(in, "m/tryb_babci: on", len) == 0) {
+        ((SessionData*)user)->is_privilege = 1;
+        printf("privileged mode on\n");
+        SendTextToWs(wsi, "Mprivileged mode on", 20, user);
+        return;
+
+    }} else if(len == 17) {
+    if(strncmp(in, "m/tryb_babci: off", len) == 0) {
+        ((SessionData*)user)->is_privilege = 0;
+        printf("privileged mode off\n");
+        SendTextToWs(wsi, "Mprivileged mode off", 21, user);
+        return;
+
+    }} else if(len == 13) {
+    if(strncmp(in, "m/force_reset", len) == 0) {
+        if(!user->is_privilege) {
+            printf("tried reseting game but not privileged\n");
+            SendTextToWs(wsi, "MPermission denied", 19, user);
+            return;
+        }
+        printf("reseting game\n");
+        DestroyGame();
+        SendTextToAllWs(wsi, "R", 2);
+        return;
+
+    }if(strncmp(in, "m/force_start", len) == 0) {
+        if(!user->is_privilege) {
+            printf("tried starting game but not privileged\n");
+            SendTextToWs(wsi, "MPermission denied", 19, user);
+            return;
+        }
+        printf("starting game\n");
+        global_data.is_forced_game = 1;
+        StartGame(wsi);
+        return;
+    }} else if(len == 12) {
+    if(strncmp(in, "m/force_skip", len) == 0) {
+        if(!user->is_privilege) {
+            printf("tried skipping turn but not privileged\n");
+            SendTextToWs(wsi, "MPermission denied", 19, user);
+            return;
+        }
+        printf("skipping turn\n");
+        ToNextPlayer();
+        SendTextToAllWs(wsi, "d\0", 3);
+        return;
+
+    }} else if(len == 6) {
+    if(strncmp(in, "m/help", len) == 0) {
+        printf("used help\n");
+        const char* message = "MAvailable commands:<br><span style=\"color:green\">PRIVILEGED</span><br>force_start - starts the game even if no all players are ready<br>force_reset - resets the game<br><span style=\"color:green\">NON PRIVILEGED</span><br>help - you just used it";
+        SendTextToWs(wsi, message, 245, user);
+        return;
+    }}
+    printf("unknown command\n");
+    SendTextToWs(wsi, "MUnknown command; type /help", 29, user);
 }
 
 char CheckMove(const char card, const SessionData* user) {
     for(char i=0; i<user->cards_count; i++) {
         if(user->cards[i] == card) {
 /////////////// when card is found
-    if(global_data.table_card <= 40) {
-        if(card <= 40) {
+    if(global_data.table_card <= 44) {
+        if(card <= 44) {
             if(global_data.table_card%4 == card%4 ||
                (char)((global_data.table_card-1) / 4) == (char)((card-1) / 4)) {
                 return i+1;
@@ -107,8 +167,8 @@ char CheckMove(const char card, const SessionData* user) {
 
 char PlayMove(const char card_pos, SessionData* user, struct lws* wsi)
 {
-    if(user->cards[card_pos] > 40) {
-        printf("do sibudioud when special card\n");
+    if(user->cards[card_pos] >= 40 && user->cards[card_pos] < 45) {
+        global_data.is_flipped = !global_data.is_flipped;
     }
 
     global_data.table_card = user->cards[card_pos];
@@ -144,6 +204,7 @@ const char *CardToString(const char card)
     case 29: return "r7";
     case 33: return "r8";
     case 37: return "r9";
+    case 41: return "rr";
 
     case 2: return "g0";
     case 6: return "g1";
@@ -155,6 +216,7 @@ const char *CardToString(const char card)
     case 30: return "g7";
     case 34: return "g8";
     case 38: return "g9";
+    case 42: return "gr";
 
     case 3: return "b0";
     case 7: return "b1";
@@ -166,6 +228,7 @@ const char *CardToString(const char card)
     case 31: return "b7";
     case 35: return "b8";
     case 39: return "b9";
+    case 43: return "br";
 
     case 4: return "y0";
     case 8: return "y1";
@@ -177,6 +240,7 @@ const char *CardToString(const char card)
     case 32: return "y7";
     case 36: return "y8";
     case 40: return "y9";
+    case 44: return "yr";
 
     default: return "whatthehell";
     }
@@ -184,7 +248,7 @@ const char *CardToString(const char card)
 
 void DestroyGame() {
     struct Turn* temp;
-    for(int i = 0; i < global_data.connected_sessions_count; i++) {
+    for(;global_data.players_assigned != 0; global_data.players_assigned--) {
         temp = global_data.first_turn->next_player;
         free(global_data.first_turn);
         global_data.first_turn = temp;
@@ -193,8 +257,8 @@ void DestroyGame() {
     global_data.is_playable_game = 0;
     global_data.is_active_game = 0;
     global_data.ready_sessions_count = 0;
-    global_data.players_assigned = 0;
     global_data.current_turn = 0;
+    global_data.is_flipped = 0;
 }
 
 void ToNextPlayer() {

@@ -1,6 +1,5 @@
 #include "session.h"
 #include "game.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include "antixss.h"
 
@@ -15,6 +14,7 @@ int callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void
             ((SessionData*)user)->cards_count = 0;
             ((SessionData*)user)->is_playing = 0;
             ((SessionData*)user)->is_ready = 0;
+            ((SessionData*)user)->is_privilege = 0;
             ((SessionData*)user)->profile = (rand()%8) + 1;
 
             printf("New Connection: [ \n");
@@ -97,17 +97,22 @@ int callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void
                 break;
                       /////////////////////////
             case 'm': //        Sending message
-                if(len > 200) {
+                char message[256] = "m";
+                if(len == 1) {
+                    printf("empty message");
+                    break;
+                }
+                if(((char*)in)[1] == '/') {
+                    ConsoleCommand(in, wsi, user, len);
+                    break;
+                }
+                if(isSafe(&((char*)in)[1])) break;
+                if(len > 200) { 
                     printf("tried sending message but is too long\n");
                     break;
                 } 
+
                 printf("send message \"%.*s\"\n", (int)len-1, &((char*)in)[1]);
-
-                bool isGood = isSafe(&((char*)in)[1]);
-                if(!isGood) break;
-                
-
-                char message[256] = "m";
                 strcpy(&message[1], ((SessionData*)user)->username);
                 SendTextToAllWs(wsi, strncat(message, &((char*)in)[1], len-1), len+16);
                 break;
@@ -133,10 +138,10 @@ int callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void
                 break;
                       //////////////////////
             case 's': //        Joining game
-                if((!((SessionData*)user)->is_ready) || (global_data.is_playable_game)) {
+                if((!((SessionData*)user)->is_ready || global_data.is_playable_game) && !global_data.is_forced_game) {
                     printf("tried joining but game already started\n");
                     break;
-                } else if (((SessionData*)user)->is_playing) {
+                } else if (((SessionData*)user)->is_playing && !global_data.is_forced_game) {
                     printf("tried joining but already joined\n");
                     break;
                 }
@@ -148,7 +153,9 @@ int callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void
                 first_cards[16] = 0;
                 strncpy(&first_cards[1], ((SessionData*)user)->cards, 7);
                 strncpy(&first_cards[8], (char*)(&global_data.players_assigned), 4);
-                strncpy(&first_cards[12], (char*)(&global_data.ready_sessions_count), 4);
+
+                if(!global_data.is_forced_game) strncpy(&first_cards[12], (char*)(&global_data.ready_sessions_count), 4);
+                else strncpy(&first_cards[12], (char*)(&global_data.connected_sessions_count), 4);
                 SendTextToWs(wsi, first_cards, sizeof(first_cards), user);
 
                 struct Turn* this_player = malloc(sizeof(struct Turn));
@@ -174,12 +181,14 @@ int callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void
                 for(int i=1; i<8; i++) printf("%s ", CardToString(first_cards[i]));
                 printf("\n");
 
-                if(global_data.players_assigned == global_data.ready_sessions_count) { // Last Player
+                if((global_data.players_assigned == global_data.ready_sessions_count && !global_data.is_forced_game) ||
+                   (global_data.is_forced_game && global_data.players_assigned == global_data.connected_sessions_count)) { // Last Player
                     printf("------- all players joined; game started\n");
                     global_data.first_turn->previous_player = global_data.current_turn;
                     global_data.current_turn->next_player = global_data.first_turn;
                     global_data.current_turn = global_data.first_turn;
                     global_data.is_playable_game = 1;
+                    global_data.is_forced_game = 0;
                     SendTextToAllWs(wsi, "P", 2);
 
                 }
@@ -221,9 +230,13 @@ int callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void
             global_data.connected_sessions_count--;
             printf("user has disconnected id: %d\n", ((SessionData*)user)->id);
             if(((SessionData*)user)->message_to_send!=0) free(((SessionData*)user)->message_to_send);
-
+            if(global_data.is_playable_game) {
+                if(((SessionData*)user)->is_playing) {
+                    global_data.players_assigned--;
+                }
+            }
             char message[26] = "M";
-            if(global_data.connected_sessions_count !=0) {
+            if(global_data.connected_sessions_count != 0) {
                 strcpy(&message[1], ((SessionData*)user)->username);
                 SendTextToAllWs(wsi, strcat(message, " has left"), 26);
             }

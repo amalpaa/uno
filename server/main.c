@@ -48,6 +48,7 @@ int main(int argc, char **argv) {
     global_data.messages_pending = 0;
     global_data.last_message = 0;
     global_data.is_flipped = 0;
+    global_data.is_forced_game = 0;
 
     printf("Websocket context created. Entering main loop.\n");
     while (1) { 

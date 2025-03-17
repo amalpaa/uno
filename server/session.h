@@ -20,6 +20,7 @@ struct GlobalData {
     char is_active_game;
     char is_playable_game;
     char is_flipped;
+    char is_forced_game;
     char table_card;
 
     struct Turn* current_turn;
@@ -41,6 +42,7 @@ typedef struct {
     int id;
     char is_playing;
     char is_ready;
+    char is_privilege;
     char profile;
     char username[16];
     char cards[64];
