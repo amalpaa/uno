@@ -10,11 +10,13 @@ int callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void
         case LWS_CALLBACK_ESTABLISHED: 
             ((SessionData*)user)->id = global_data.current_id;
             AssignName16(((SessionData*)user)->username);
+            ((SessionData*)user)->username_length = 16;
             ((SessionData*)user)->message_to_send = 0;
             ((SessionData*)user)->cards_count = 0;
             ((SessionData*)user)->is_playing = 0;
             ((SessionData*)user)->is_ready = 0;
             ((SessionData*)user)->is_privilege = 0;
+            ((SessionData*)user)->is_active = 1;
             ((SessionData*)user)->profile = (rand()%8) + 1;
 
             printf("New Connection: [ \n");
@@ -23,14 +25,14 @@ int callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void
             global_data.connected_sessions_count++;
             global_data.current_id++;
 
-            char message_w[28] = "M";
             char message_id[6] = "i";
-
             strncpy(&message_id[1], (char*)(&((SessionData*)user)->id), 4);
-            strncpy(&message_w[1], ((SessionData*)user)->username, 16);
             message_id[5] = 0;
 
-            SendTextToAllWs(wsi, strcat(message_w, " has joined"), 28);
+            char message_w[28] = "M";
+            strncpy(&message_w[1], ((SessionData*)user)->username, ((SessionData*)user)->username_length);
+            memcpy(&message_w[((SessionData*)user)->username_length], " has joined", 12);
+            SendTextToAllWs(wsi, message_w, 12 + ((SessionData*)user)->username_length);
             SendTextToWs(wsi, message_id, sizeof(message_id), user);
             break;
 
@@ -54,7 +56,12 @@ int callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void
                     }
                     break;
                 }
-                printf("write operation called with empty buffer (not good)\n");
+                if(((SessionData*)user)->is_active) {
+                    ((SessionData*)user)->is_active = 0;
+                    lws_write(wsi, "T", 1, LWS_WRITE_TEXT);
+                } else {
+                    // remove connection
+                }
                 break;
             }
             lws_write(wsi, &((SessionData*)user)->message_to_send[LWS_PRE], 
@@ -66,9 +73,13 @@ int callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void
             break;
 
         case LWS_CALLBACK_RECEIVE:
-            printf("message from id %d: ", ((SessionData*)user)->id);
+            printf("id %d: ", ((SessionData*)user)->id);
             switch (*(char*)in)
             {
+                      /////////////////////////
+            case 'T': //        Ping Pong test
+                ((SessionData*)user)->is_active = 1;
+                break;
                       /////////////////////////
             case 'r': //        Ready / unready
                 if(global_data.is_active_game) {
@@ -96,10 +107,34 @@ int callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void
                 }
                 break;
                       /////////////////////////
+            case 'q': //        Changing username
+                if(len < 6) {
+                    printf("tried changing username but was too short\n");
+                    break;
+                } else if(len > 16) {
+                    printf("tried changing username but was too long\n");
+                    break;
+                }
+
+                ((SessionData*)user)->username_length = len;
+                ((SessionData*)user)->username[len-1] = 0;
+                strncpy(((SessionData*)user)->username, &((char*)in)[1], len-1);
+                printf("changed username to %s\n", ((SessionData*)user)->username);
+
+                if(((SessionData*)user)->is_playing && global_data.is_playable_game) {
+                    char message[24];
+                    message[0] = 'q';
+                    strncpy(&message[1], (char*)&((SessionData*)user)->id, 4);
+                    strncpy(&message[5], ((SessionData*)user)->username, len-1);
+                    message[len+4] = 0;
+                    SendTextToAllWs(wsi, message, 5+len);
+                }
+                break;
+                      /////////////////////////
             case 'm': //        Sending message
                 char message[256] = "m";
                 if(len == 1) {
-                    printf("empty message");
+                    printf("empty message\n");
                     break;
                 }
                 if(((char*)in)[1] == '/') {
@@ -112,11 +147,13 @@ int callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void
                     break;
                 } 
 
+                message[1] = ((SessionData*)user)->username_length;
                 printf("send message \"%.*s\"\n", (int)len-1, &((char*)in)[1]);
-                strcpy(&message[1], ((SessionData*)user)->username);
-                SendTextToAllWs(wsi, strncat(message, &((char*)in)[1], len-1), len+16);
+                strcpy(&message[2], ((SessionData*)user)->username);
+                SendTextToAllWs(wsi, strncat(message, &((char*)in)[1], len-1), len+((SessionData*)user)->username_length+1);
                 break;
-            case 'd':
+            case 'd': /////////////////////////
+                      //        Drawing a card
                 if(!global_data.is_playable_game) {
                     printf("tried to draw a card but the game has not started\n");
                     break;

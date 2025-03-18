@@ -43,8 +43,11 @@ typedef struct {
     char is_playing;
     char is_ready;
     char is_privilege;
+    char is_active;
+
     char profile;
     char username[16];
+    char username_length;
     char cards[64];
     char cards_count;
     char* message_to_send;

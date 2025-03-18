@@ -15,7 +15,6 @@ body {
 html {
     height: 100%;
 }
-
 #messages {
     width: 400px;
     height: calc(100% - 239px);
@@ -110,6 +109,10 @@ html {
     border-radius: 20px;
     margin: 2px;
 }
+.player > p1 {
+    height: 56px;
+}
+
 .player-img {
     height: 150px;
     background-size: cover;
@@ -138,6 +141,16 @@ html {
 .left-row {
     height: 100%;
 }
+#_username {
+    width: 260px;
+}
+#change-username {
+    width: 130px;
+    height: 20px;
+    border: solid 1px black;
+    font-size: 15px;
+    background-color: rgb(154, 183, 196);
+}
 
 </style>
 
@@ -151,6 +164,10 @@ html {
             <div class="user-inputs">
                 <input id="ready" type="button" onclick="Ready()" value="ready">
                 <input id="draw" type="button" onclick="Draw()" value="draw">
+            </div>
+            <div class="user-inputs">
+                <input id="_username" type="text"> 
+                <input id="change-username" type="button" onclick="ChangeUsername()" value="change username">
             </div>
         </div>
         <div class="game-space">

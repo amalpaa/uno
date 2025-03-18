@@ -81,8 +81,8 @@ void GenerateStartingCards(char *cards, char* card_count)
 
 void DrawCard(char *cards, char* card_count)
 {
-    cards[*card_count] = (rand()%88)+1;
-    if(cards[*card_count] > 44) cards[*card_count] -= 44; 
+    cards[*card_count] = (rand()%96)+1;
+    if(cards[*card_count] > 48) cards[*card_count] -= 48; 
     (*card_count)++;
 }
 
@@ -150,8 +150,8 @@ char CheckMove(const char card, const SessionData* user) {
     for(char i=0; i<user->cards_count; i++) {
         if(user->cards[i] == card) {
 /////////////// when card is found
-    if(global_data.table_card <= 44) {
-        if(card <= 44) {
+    if(global_data.table_card <= 48) {
+        if(card <= 48) {
             if(global_data.table_card%4 == card%4 ||
                (char)((global_data.table_card-1) / 4) == (char)((card-1) / 4)) {
                 return i+1;
@@ -167,12 +167,8 @@ char CheckMove(const char card, const SessionData* user) {
 
 char PlayMove(const char card_pos, SessionData* user, struct lws* wsi)
 {
-    if(user->cards[card_pos] >= 40 && user->cards[card_pos] < 45) {
-        global_data.is_flipped = !global_data.is_flipped;
-    }
-
-    global_data.table_card = user->cards[card_pos];
     user->cards_count--;
+    global_data.table_card = user->cards[card_pos];
     user->cards[card_pos] = user->cards[user->cards_count];
 
     char play[3];
@@ -185,6 +181,14 @@ char PlayMove(const char card_pos, SessionData* user, struct lws* wsi)
         SendTextToAllWs(wsi, play, sizeof(play));
         DestroyGame();
         return 1;
+    }
+    
+    if(global_data.table_card >= 40) {
+        if(global_data.table_card < 45) {
+            global_data.is_flipped = !global_data.is_flipped;
+        } else if(global_data.table_card < 49) {
+            ToNextPlayer();
+        }
     }
     SendTextToAllWs(wsi, play, sizeof(play));
     return 0;
@@ -205,6 +209,7 @@ const char *CardToString(const char card)
     case 33: return "r8";
     case 37: return "r9";
     case 41: return "rr";
+    case 45: return "rb";
 
     case 2: return "g0";
     case 6: return "g1";
@@ -217,6 +222,7 @@ const char *CardToString(const char card)
     case 34: return "g8";
     case 38: return "g9";
     case 42: return "gr";
+    case 46: return "gb";
 
     case 3: return "b0";
     case 7: return "b1";
@@ -229,6 +235,7 @@ const char *CardToString(const char card)
     case 35: return "b8";
     case 39: return "b9";
     case 43: return "br";
+    case 47: return "bb";
 
     case 4: return "y0";
     case 8: return "y1";
@@ -241,6 +248,7 @@ const char *CardToString(const char card)
     case 36: return "y8";
     case 40: return "y9";
     case 44: return "yr";
+    case 48: return "yb";
 
     default: return "whatthehell";
     }

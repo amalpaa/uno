@@ -16,12 +16,17 @@ if ('WebSocket' in window) {
         let data = String(message.data);
         let count;
         switch(data[0]) {
+            case "T":
+                ws.send("T");
+                break;
             case "m":
-                document.getElementById("messages").innerHTML += "<p1><a style=\"color: green\">" + 
-                    data.slice(1, 16) + "</a> " + data.slice(16,data.length) + "</p1><br>";
+                RenderMessage(data);
                 break;
             case "M":
-                document.getElementById("messages").innerHTML += "<p1>" + data.substring(1) + "</p1><br>";
+                let __message_space = document.createElement("p1");
+                __message_space.append(document.createTextNode(data.substring(1)));
+                document.getElementById("messages").append(__message_space);
+                document.getElementById("messages").innerHTML += "<br>";
                 break;
             case "s":
                 card_on_table = data.charCodeAt(1)-1;
@@ -41,9 +46,6 @@ if ('WebSocket' in window) {
                 game_started = true;
                 turns_direction = -1;
                 NextTurn();
-            case "c":
-                let id = ToCInt(data.slice(1, 5));
-                AppendPlayer(data.slice(5, 21), id, 7, data[21].charCodeAt(0), id != p_id);
                 break;
             case "i":
                 p_id = ToCInt(data.slice(1, 5));
@@ -53,6 +55,13 @@ if ('WebSocket' in window) {
                 RenderCard(document.getElementById("table-card"), card_on_table);
                 count = GetCurrentPlayer().getElementsByTagName("p1")[0];
                 count.innerHTML = Number(count.innerHTML.slice(0, -1))-1+"x";
+                if(card_on_table >= 40) {
+                    if(card_on_table < 44) {
+                        turns_direction *= -1;
+                    } else if (card_on_table < 48) {
+                        NextTurn();
+                    }
+                }
                 NextTurn();
                 break;
             case "d":
@@ -68,6 +77,7 @@ if ('WebSocket' in window) {
                 card_on_table = data.charCodeAt(1)-1;
                 RenderCard(document.getElementById("table-card"), card_on_table);
                 PrintWinner();
+            case "R":
                 turns_till_yours = 255;
                 connected_sessions = 0;
                 game_started = false;
@@ -76,6 +86,20 @@ if ('WebSocket' in window) {
                 document.getElementById("ready").style.backgroundColor = "rgb(250, 125, 93)";
                 document.getElementById("table-text-space").innerText = "";
                 document.getElementById("cards-row").innerHTML = "";
+                break;
+            case "q":
+                let _id = ToCInt(data.slice(1, 5));
+                Array.from(document.getElementsByClassName("player")).forEach((player) => {
+                    if(player.data == _id) {
+                        player.getElementsByTagName("p1")[0].textContent = data.slice(5, 21);
+                        return;
+                    }
+                })
+                break;
+            case "c":
+                let id = ToCInt(data.slice(1, 5));
+                AppendPlayer(data.slice(5, 21), id, 7, data[21].charCodeAt(0), id != p_id);
+                break;
         }
 
         console.log('get websocket message---', data);
@@ -86,6 +110,21 @@ if ('WebSocket' in window) {
 } else {
     console.error('dont support websocket');
 };
+
+function RenderMessage(message) {
+    let messages = document.getElementById("messages");
+    let message_con = document.createElement("p1");
+    let player = document.createElement("span");
+
+    player.style.color = "green"; 
+    player.style.marginRight = "5px";
+    player.append(document.createTextNode(message.slice(2, 1+message.charCodeAt(1))));
+
+    message_con.append(player);
+    message_con.append(document.createTextNode(message.slice(1+message.charCodeAt(1))));
+    messages.append(message_con);
+    messages.innerHTML += "<br>";
+}
 
 function SendToWs() {
     ws.send("m" + document.getElementById("_input").value);
@@ -170,8 +209,8 @@ function PlayCard(card_obj) {
     let color = GetCardColor(card);
     let number =  Math.floor(card / 4);
 
-    if(card_on_table <= 40) {
-        if(card <= 40) {
+    if(card_on_table <= 48) {
+        if(card <= 48) {
             if(t_number != number && t_color != color) {
                 PrintErrorToUser("Cards have different number and color");
                 return;
@@ -211,15 +250,19 @@ function Draw() {
 }
 
 function RenderCard(node, card) {
-    if(card <= 40) {
+    let color = GetCardColor(card);
+    if(card < 40) {
         let number = Math.floor(card / 4);
-        let color = GetCardColor(card);
         node.style.backgroundImage = "url(resource/" + color + number + ".png)";
+    } else if (card < 44) {
+        node.style.backgroundImage = "url(resource/" + color + "r.png)";
+    } else if (card < 48) {
+        node.style.backgroundImage = "url(resource/" + color + "b.png)";
     }
 }
 
 function PrintErrorToUser(message) {
-    document.getElementById("messages").innerHTML += "<p1><a style=\"color:red\">- " + message + "</a></p1><br>";
+    document.getElementById("messages").innerHTML += "<p1 style=\"color:red\">- " + message + "</p1><br>";
 }
 
 function GetCardColor(card) {
@@ -244,4 +287,11 @@ function OnBodyLoad() {
     document.getElementById("_input").addEventListener("keydown", function(event) {
         if(event.key === "Enter") SendToWs();
     });
+}
+
+function ChangeUsername() {
+    let username = document.getElementById("_username").value;
+    if(username.length < 6) return;
+    document.getElementById("_username").value = "";
+    ws.send("q" + username);
 }
