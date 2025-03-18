@@ -106,7 +106,7 @@ int callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void
                     ConsoleCommand(in, wsi, user, len);
                     break;
                 }
-                if(isSafe(&((char*)in)[1])) break;
+                if(!isSafe(&((char*)in)[1])) break;
                 if(len > 200) { 
                     printf("tried sending message but is too long\n");
                     break;

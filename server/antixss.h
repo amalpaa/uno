@@ -1,7 +1,6 @@
 #ifndef uno_antixss
 #define uno_antixss
 
-#include <stdbool.h>
+char isSafe(char* str);
 
-bool isSafe(char* str);
 #endif

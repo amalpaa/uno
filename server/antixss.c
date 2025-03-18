@@ -50,29 +50,29 @@ void getTags()
     htmlTagList = tagList;
 }
 
-bool isSafe(char* input)
+char isSafe(char* input)
 {
-    if(htmlTagList == NULL)
+    if(htmlTagList == 0)
     {
         getTags();
     }
 
-    if(strstr(input,"<") == NULL)
+    if(strstr(input,"<") == 0)
     {
-        return true;
+        return 1;
     }
 
     for(int i = 0; i < numLines; i++)
     {
-        if(strstr(input,htmlTagList[i]) != NULL)
+        if(strstr(input,htmlTagList[i]) != 0)
         {
             printf("Potential XSS detected in user input: %s\n", input);
             memset(input, 0, strlen(input)); //bc uncleared buffer could block incoming messages
-            return false;
+            return 0;
         }
     }
 
-    return true;
+    return 1;
 }
 
 
