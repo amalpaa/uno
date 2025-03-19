@@ -14,7 +14,8 @@ add_executable(uno
                 main.c
                 useful.c
                 game.c
-                antixss.c)
+                antixss.c
+                userinput.c)
 
 target_link_libraries(uno websockets)
 target_link_libraries(uno m)
