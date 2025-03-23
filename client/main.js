@@ -50,10 +50,11 @@ if ('WebSocket' in window) {
             case "i":
                 p_id = ToCInt(data.slice(1, 5));
                 break;
-            case "w":    
+            case "w": {
+                let player = GetCurrentPlayer();
                 card_on_table = data.charCodeAt(1)-1;
-                RenderCard(document.getElementById("table-card"), card_on_table);
-                count = GetCurrentPlayer().getElementsByTagName("p1")[0];
+                PlayCardAnimation(player.getElementsByClassName("card-icon")[0]);
+                count = player.getElementsByTagName("p1")[0];
                 count.innerHTML = Number(count.innerHTML.slice(0, -1))-1+"x";
                 if(card_on_table >= 40) {
                     if(card_on_table < 44) {
@@ -63,9 +64,11 @@ if ('WebSocket' in window) {
                     }
                 }
                 NextTurn();
-                break;
+                break; }
             case "d":
-                count = GetCurrentPlayer().getElementsByTagName("p1")[0];
+                let player = GetCurrentPlayer();
+                DrawCardAnimation(player.getElementsByClassName("card-icon")[0]);
+                count = player.getElementsByTagName("p1")[0];
                 count.innerHTML = Number(count.innerHTML.slice(0, -1))+data.charCodeAt(1)+"x";
                 NextTurn();
                 break;
@@ -294,4 +297,46 @@ function ChangeUsername() {
     if(username.length < 6) return;
     document.getElementById("_username").value = "";
     ws.send("q" + username);
+}
+
+function DrawCardAnimation(player_card_obj) {
+    let rect = document.getElementById("draw-pool").getBoundingClientRect();
+    let card = document.createElement("div");
+    card.classList.add("animation-card");
+
+    card.style.left = (rect.left + scrollX) + "px";
+    card.style.top = (rect.top + scrollY) + "px";
+
+    document.body.append(card);
+    requestAnimationFrame(() => {
+        let rect = player_card_obj.getBoundingClientRect();
+        card.style.left = (rect.left + scrollX) + "px";
+        card.style.top = (rect.top + scrollY) + "px";
+        card.style.height = "50px";
+    });
+    
+    setTimeout(() => card.remove(), 300);
+}
+
+function PlayCardAnimation(player_card_obj) {
+    let rect = player_card_obj.getBoundingClientRect();
+    let card = document.createElement("div");
+    card.classList.add("rev-animation-card");
+
+    card.style.left = (rect.left + scrollX) + "px";
+    card.style.top = (rect.top + scrollY) + "px";
+    RenderCard(card, card_on_table);
+
+    document.body.append(card);
+    requestAnimationFrame(() => {
+        let rect = document.getElementById("table-card").getBoundingClientRect();
+        card.style.left = (rect.left + scrollX) + "px";
+        card.style.top = (rect.top + scrollY) + "px";
+        card.style.height = "100px";
+    });
+    
+    setTimeout(() => {
+        card.remove();
+        RenderCard(document.getElementById("table-card"), card_on_table);
+    }, 300);
 }

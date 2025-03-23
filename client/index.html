@@ -57,7 +57,7 @@ html {
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
-    width: 60%;
+    max-width: 750px;
     height: 40%;
     margin-inline: auto;
 }
@@ -121,15 +121,39 @@ html {
     font-size: 20px;
     color: rgb(55, 61, 65);
 }
+#draw-pool,
 #table-card {
-    position: relative;
     width: 66px;
     height: 100px;
-    left: calc(50% - 40px);
-    top: 20%;
     border-radius: 5px;
     background-image: url("resource/card_back.png");
-    background-size: cover;
+    background-size: contain;
+    margin-inline: 30px;
+    background-repeat: no-repeat;
+}
+#draw-pool {
+    padding-bottom: 10px;
+    background-color: rgb(10, 10, 10);
+}
+.animation-card {
+    width: 66px;
+    height: 100px;
+    background-image: url("resource/card_back.png");
+}
+.rev-animation-card {
+    width: 66px;
+    height: 50px;
+}
+.animation-card,
+.rev-animation-card {
+    position: absolute;
+    border-radius: 5px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    transition: all 0.3s;
+}
+#table-card {
+    margin-top: 5px;
 }
 #table-text-space {
     position: relative;
@@ -150,6 +174,12 @@ html {
     border: solid 1px black;
     font-size: 15px;
     background-color: rgb(154, 183, 196);
+}
+.table-space {
+    position: relative;
+    top: 20%;
+    display: flex;
+    justify-content: center;
 }
 
 </style>
@@ -173,7 +203,10 @@ html {
         <div class="game-space">
             <div id="other-players"> </div>
             <div class="table">
-                <div id="table-card"> </div>
+                <div class="table-space">
+                    <div id="table-card"> </div>
+                    <div id="draw-pool"> </div>
+                </div>
                 <div id="table-text-space"></div>
             </div>
             <div id="cards-row"> </div>
