@@ -87,17 +87,29 @@ void ManageUserInput(char* in, SessionData* user, size_t len, struct lws* wsi) {
             printf("tried to draw a card but was not his turn\n");
             break;
         }
-        DrawCard(user->cards, &user->cards_count);
-        char message_card[4];
+        char message_card[64];
         message_card[0] = 'u';
-        message_card[1] = 1;
-        message_card[2] = user->cards[user->cards_count-1];
-        message_card[3] = 0;
-        printf("draw card: %s\n", CardToString(message_card[2])); 
-        
+        message_card[1] = global_data.draw_count;
+
+        char draw_message[3];
+        draw_message[0] = 'd';
+        draw_message[1] = global_data.draw_count;
+        draw_message[2] = 0;
+
+        printf("draw card: "); 
+        for(int i=2; i<global_data.draw_count+2; i++) {
+            DrawCard(user->cards, &user->cards_count);
+            message_card[i] = user->cards[user->cards_count-1];
+            printf("%s ", CardToString(message_card[i]));
+        }
+        message_card[2+global_data.draw_count] = 0;
+        printf("\n");
         ToNextPlayer();
-        SendTextToWs(wsi, message_card, sizeof(message_card), user);
-        SendTextToAllWs(wsi, "d\1", 3);
+        SendTextToWs(wsi, message_card, 3+global_data.draw_count, user);
+        SendTextToAllWs(wsi, draw_message, 3);
+
+        global_data.draw_count = 1;
+        global_data.is_fresh_card = 0;
         break;
 
     case _JOINING_GAME:

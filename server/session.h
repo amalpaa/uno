@@ -17,11 +17,14 @@ struct Turn {
 struct GlobalData {
     int current_id;
     int players_assigned;
+    char table_card;
+    char draw_count;
+    
     char is_active_game;
     char is_playable_game;
     char is_flipped;
     char is_forced_game;
-    char table_card;
+    char is_fresh_card;
 
     struct Turn* current_turn;
     struct Turn* first_turn;

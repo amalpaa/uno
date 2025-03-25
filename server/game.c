@@ -4,6 +4,9 @@
 void StartGame(struct lws* wsi) {
     global_data.is_active_game = 1;
     global_data.players_assigned = 0;
+    global_data.is_fresh_card = 0;
+    global_data.draw_count = 1;
+
     char c[3];
     c[0] = 's';
     c[2] = 0;
@@ -81,8 +84,8 @@ void GenerateStartingCards(char *cards, char* card_count)
 
 void DrawCard(char *cards, char* card_count)
 {
-    cards[*card_count] = (rand()%96)+1;
-    if(cards[*card_count] > 48) cards[*card_count] -= 48; 
+    cards[*card_count] = (rand()%104)+1;
+    if(cards[*card_count] > 52) cards[*card_count] -= 52; 
     (*card_count)++;
 }
 
@@ -150,10 +153,15 @@ char CheckMove(const char card, const SessionData* user) {
     for(char i=0; i<user->cards_count; i++) {
         if(user->cards[i] == card) {
 /////////////// when card is found
-    if(global_data.table_card <= 48) {
-        if(card <= 48) {
-            if(global_data.table_card%4 == card%4 ||
-               (char)((global_data.table_card-1) / 4) == (char)((card-1) / 4)) {
+    if(global_data.table_card <= 52) {
+        if(card <= 52) {
+            // the same value
+            if((char)((global_data.table_card-1) / 4) == (char)((card-1) / 4)) {
+                return i+1;
+            }
+            // the same color
+            if(global_data.table_card%4 == card%4) {
+                if(global_data.table_card > 48 && global_data.is_fresh_card) return 0;
                 return i+1;
             }
         }
@@ -183,11 +191,15 @@ char PlayMove(const char card_pos, SessionData* user, struct lws* wsi)
         return 1;
     }
     
-    if(global_data.table_card >= 40) {
+    if(global_data.table_card > 40) {
         if(global_data.table_card < 45) {
             global_data.is_flipped = !global_data.is_flipped;
         } else if(global_data.table_card < 49) {
             ToNextPlayer();
+        } else if(global_data.table_card < 53) {
+            if(global_data.draw_count == 1) global_data.draw_count = 2;
+            else global_data.draw_count += 2;
+            global_data.is_fresh_card = 1;
         }
     }
     SendTextToAllWs(wsi, play, sizeof(play));
@@ -210,6 +222,7 @@ const char *CardToString(const char card)
     case 37: return "r9";
     case 41: return "rr";
     case 45: return "rb";
+    case 49: return "r+2";
 
     case 2: return "g0";
     case 6: return "g1";
@@ -223,6 +236,7 @@ const char *CardToString(const char card)
     case 38: return "g9";
     case 42: return "gr";
     case 46: return "gb";
+    case 50: return "g+2";
 
     case 3: return "b0";
     case 7: return "b1";
@@ -236,6 +250,7 @@ const char *CardToString(const char card)
     case 39: return "b9";
     case 43: return "br";
     case 47: return "bb";
+    case 51: return "b+2";
 
     case 4: return "y0";
     case 8: return "y1";
@@ -249,6 +264,7 @@ const char *CardToString(const char card)
     case 40: return "y9";
     case 44: return "yr";
     case 48: return "yb";
+    case 52: return "y+2";
 
     default: return "whatthehell";
     }

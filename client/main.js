@@ -6,6 +6,7 @@ var turns_till_yours = 255;
 var starting_turns_num = 0;
 var connected_sessions = 0;
 var turns_direction = -1; // 1 if reversed
+var is_fresh = false;
 
 if ('WebSocket' in window) {
     var ws = new WebSocket('ws://127.0.0.1:8080/websocket', "uno-protocol");
@@ -22,12 +23,12 @@ if ('WebSocket' in window) {
             case "m":
                 RenderMessage(data);
                 break;
-            case "M":
-                let __message_space = document.createElement("p1");
-                __message_space.append(document.createTextNode(data.substring(1)));
-                document.getElementById("messages").append(__message_space);
+            case "M": {
+                let message_space = document.createElement("p1");
+                message_space.append(document.createTextNode(data.substring(1)));
+                document.getElementById("messages").append(message_space);
                 document.getElementById("messages").innerHTML += "<br>";
-                break;
+                break; }
             case "s":
                 card_on_table = data.charCodeAt(1)-1;
                 RenderCard(document.getElementById("table-card"), card_on_table);
@@ -59,28 +60,33 @@ if ('WebSocket' in window) {
                 if(card_on_table >= 40) {
                     if(card_on_table < 44) {
                         turns_direction *= -1;
-                    } else if (card_on_table < 48) {
+                    } else if(card_on_table < 48) {
                         NextTurn();
+                    } else if(card_on_table < 52) {
+                        is_fresh = true;
                     }
                 }
                 NextTurn();
                 break; }
-            case "d":
+            case "d": {
                 let player = GetCurrentPlayer();
-                DrawCardAnimation(player.getElementsByClassName("card-icon")[0]);
+                let amount = data.charCodeAt(1);
+                DrawCardAnimation(player.getElementsByClassName("card-icon")[0], amount);
+
+                is_fresh = false;
                 count = player.getElementsByTagName("p1")[0];
-                count.innerHTML = Number(count.innerHTML.slice(0, -1))+data.charCodeAt(1)+"x";
+                count.innerHTML = Number(count.innerHTML.slice(0, -1))+amount+"x";
                 NextTurn();
-                break;
-            case "u":
+                break; }
+            case "u": {
                 let new_cards_amount = data.charCodeAt(1);
                 for(i=2; i<new_cards_amount+2; i++) AppendCard(data.charCodeAt(i)-1);
-                break;
+                break; }
             case "W": 
                 card_on_table = data.charCodeAt(1)-1;
                 RenderCard(document.getElementById("table-card"), card_on_table);
                 PrintWinner();
-            case "R":
+            case "R": 
                 turns_till_yours = 255;
                 connected_sessions = 0;
                 game_started = false;
@@ -90,19 +96,19 @@ if ('WebSocket' in window) {
                 document.getElementById("table-text-space").innerText = "";
                 document.getElementById("cards-row").innerHTML = "";
                 break;
-            case "q":
-                let _id = ToCInt(data.slice(1, 5));
+            case "q": {
+                let id = ToCInt(data.slice(1, 5));
                 Array.from(document.getElementsByClassName("player")).forEach((player) => {
-                    if(player.data == _id) {
+                    if(player.data == id) {
                         player.getElementsByTagName("p1")[0].textContent = data.slice(5, 21);
                         return;
                     }
                 })
-                break;
-            case "c":
+                break; }
+            case "c": {
                 let id = ToCInt(data.slice(1, 5));
                 AppendPlayer(data.slice(5, 21), id, 7, data[21].charCodeAt(0), id != p_id);
-                break;
+                break; }
         }
 
         console.log('get websocket message---', data);
@@ -212,12 +218,17 @@ function PlayCard(card_obj) {
     let color = GetCardColor(card);
     let number =  Math.floor(card / 4);
 
-    if(card_on_table <= 48) {
-        if(card <= 48) {
-            if(t_number != number && t_color != color) {
-                PrintErrorToUser("Cards have different number and color");
-                return;
-            }
+    if(card_on_table <= 52) {
+        if(card <= 52) {
+            if(t_number != number) {
+                if(t_color != color) {
+                    PrintErrorToUser("Cards have different number and color");
+                    return;
+                } else if(is_fresh && card_on_table > 48) {
+                    PrintErrorToUser("Can only play plus card");
+                    return;
+                }
+            }   
         }
     }
 
@@ -261,6 +272,8 @@ function RenderCard(node, card) {
         node.style.backgroundImage = "url(resource/" + color + "r.png)";
     } else if (card < 48) {
         node.style.backgroundImage = "url(resource/" + color + "b.png)";
+    } else if (card < 52) {
+        node.style.backgroundImage = "url(resource/" + color + "+2.png)";
     }
 }
 
@@ -299,7 +312,7 @@ function ChangeUsername() {
     ws.send("q" + username);
 }
 
-function DrawCardAnimation(player_card_obj) {
+function DrawCardAnimation(player_card_obj, amount) {
     let rect = document.getElementById("draw-pool").getBoundingClientRect();
     let card = document.createElement("div");
     card.classList.add("animation-card");
@@ -316,6 +329,7 @@ function DrawCardAnimation(player_card_obj) {
     });
     
     setTimeout(() => card.remove(), 300);
+    if(amount > 1) setTimeout(() => DrawCardAnimation(player_card_obj, amount-1), 100);
 }
 
 function PlayCardAnimation(player_card_obj) {
